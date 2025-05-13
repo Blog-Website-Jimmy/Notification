@@ -1,0 +1,46 @@
+name: Update Hostinger server development branch
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 22
+        uses: actions/setup-java@v3
+        with:
+          java-version: '22'
+          distribution: 'temurin'
+          cache: gradle
+      - name: Build JAR
+        run: |
+          ./gradlew  build -x test
+
+      - name: Upload JAR to Hostinger
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.DO_PORT }}
+          source: "build/libs/Notification.jar"
+          target: "/root/blog-backend/notification-service"
+          strip_components: 2
+
+      - name: SSH into Hostinger instance and fetch datas and restart docker container
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.DO_PORT }}
+          script: |
+            cd /root/blog-backend/notification-service
+            docker compose stop
+            docker compose down
+            docker compose up -d

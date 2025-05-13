@@ -1,0 +1,25 @@
+version: '3.9'
+services:
+  auth-service:
+    container_name: notification-service
+    build: .
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1024M
+        reservations:
+          cpus: '1'
+          memory: 1024M
+    volumes:
+      - ./Notification.jar:/app/app.jar
+    restart: always
+    env_file: .env
+    command: [ "java", "-jar", "app.jar" ]
+    networks:
+      - blog
+    ports:
+      - "8083:8083"
+networks:
+  blog:
+    external: true
